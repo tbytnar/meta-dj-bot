@@ -5,6 +5,9 @@ import json
 import spotipy
 import time
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Request:
     requestor = str
@@ -29,8 +32,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 camera = dxcam.create(output_color="GRAY")
 
 # Spotify API Variables
-spotify_client_id = "CHANGEME"
-spotify_client_secret = "CHANGEME"
+spotify_client_id = os.getenv('SPOTIFY_CLIENT_ID')
+spotify_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 spotify_redirect_uri = "http://google.com/callback/"
 
 def PreRunValidation():
@@ -80,7 +83,7 @@ requests_buffer = []
 
 while True:
     os.system('cls')
-    print("DJ Bot is Running!")
+    print("DJ Bot is Running! Control-C to exit.")
     # img = np.array(Image.open("HW_DJ_Request_Test.png"))
     left, top = (1920 - 640) // 2, (1080 - 640) // 2
     right, bottom = left + 640, top + 640
