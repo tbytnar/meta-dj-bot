@@ -22,14 +22,15 @@ def JsonPrint(json_string):
     print(json.dumps(json_string, indent=4))
 
 # Tesseract Variables
+# NOTE: Tesseract (REQUIRED) for Windows can be downloaded here: https://github.com/UB-Mannheim/tesseract/wiki
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # DxCamera Variables
 camera = dxcam.create(output_color="GRAY")
 
 # Spotify API Variables
-spotify_client_id = "64a903b77e534d4aa4f91dfbc1d97311"
-spotify_client_secret = "9cf8ce799a8b4ad9b0e52bd8cd206cee"
+spotify_client_id = "CHANGEME"
+spotify_client_secret = "CHANGEME"
 spotify_redirect_uri = "http://google.com/callback/"
 
 def PreRunValidation():
