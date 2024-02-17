@@ -1,0 +1,8 @@
+{
+    "spotify": {
+        "token_refresh_rate": 55,
+        "client_id": "64a903b77e534d4aa4f91dfbc1d97311",
+        "client_secret": "9cf8ce799a8b4ad9b0e52bd8cd206cee",
+        "redirect_uri": "http://google.com/callback/"
+    }
+}
