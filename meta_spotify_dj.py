@@ -2,12 +2,13 @@ import dxcam
 import pytesseract
 import cv2 
 import json
-import spotipy
 import time
-import os
-from dotenv import load_dotenv
+import spotify_utilities as spotify
+import logging
+from datetime import datetime
 
-load_dotenv()
+logging.basicConfig(filename="meta_spotify_dj.log", encoding="utf-8", level=logging.DEBUG)
+logging.info(f"\n\nMeta Spotify DJ Began Running @ {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
 
 class Request:
     requestor = str
@@ -31,59 +32,14 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # DxCamera Variables
 camera = dxcam.create(output_color="GRAY")
 
-# Spotify API Variables
-spotify_client_id = os.getenv('SPOTIFY_CLIENT_ID')
-spotify_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-spotify_redirect_uri = "http://google.com/callback/"
-
-def PreRunValidation():
-    if spotify_client_id == "CHANGEME":
-        raise BaseException("You need to set the client_id to your application's Client ID.  (See: https://developer.spotify.com/documentation/web-api/tutorials/getting-started#create-an-app  for more details.) ")
-
-    if spotify_client_secret == "CHANGEME":
-        raise BaseException("You need to set the client_id to your application's Client ID.  (See: https://developer.spotify.com/documentation/web-api/tutorials/getting-started#create-an-app  for more details.) ")
-
-    if spotify_redirect_uri != "http://google.com/callback/":
-        print("Despite what the Spotify Developer guide tells you, I highly recommend you set your redirect_uri to http://google.com/callback/ otherwise you will get errors!")
-
-
-def GetSpotifyObject(client_id, client_secret, redirect_uri):
-    print("Your browser will open and ask you to allow permissions for your custom app to access your account.  Upon clicking 'Allow', copy the URL that you are directed to.  Then paste it into the terminal window when prompted for it.")
-    oauth_object = spotipy.SpotifyOAuth(client_id, client_secret, redirect_uri, scope=['playlist-modify-public','user-read-playback-state','user-modify-playback-state']) 
-    token = oauth_object.get_access_token(as_dict=False)
-    return spotipy.Spotify(auth=token) 
-    
-
-def GetAndSetSpotifyDevice(spotify_object):
-    user = spotify_object.current_user() 
-    devices = json.loads(json.dumps(spotify_object.devices()))
-    devices_json = devices.get("devices", None)
-    if len(devices_json) > 1:
-        print(f"Hello {user['display_name']}!  Your Spotify Devices:")
-        for n in range(0,len(devices_json)):
-            device_name = devices_json[n].get("name", None)
-            device_type = devices_json[n].get("type", None)
-            print(f"{n+1} = {device_name} - {device_type}")
-
-        device_choice = int(input("Enter which device you want to send tracks to:")) - 1
-        device_id = devices_json[device_choice]
-    else:
-        print(f"Only one of your recently active devices was found.  Using it.  Info: {devices_json[0]['name']} ")
-        device_id = devices_json[0]['id']
-
-    return device_id
-
-
-PreRunValidation()
-spotify = GetSpotifyObject(spotify_client_id, spotify_client_secret, spotify_redirect_uri)
-spotify_device_id = GetAndSetSpotifyDevice(spotify)
-
-
 requests_buffer = []
+spotify_manager = spotify.SpotifyManager()
+spotify_device_id = spotify.GetAndSetSpotifyDevice(spotify_manager.spotify_connection)
 
+print("DJ Bot is Running! Control-C to exit.")
 while True:
-    os.system('cls')
-    print("DJ Bot is Running! Control-C to exit.")
+    spotify_manager.auth_manager, spotify_manager.spotify_connection = spotify_manager.Refresh_Spotify(spotify_manager.auth_manager, spotify_manager.spotify_connection)
+
     # img = np.array(Image.open("HW_DJ_Request_Test.png"))
     left, top = (1920 - 640) // 2, (1080 - 640) // 2
     right, bottom = left + 640, top + 640
@@ -146,7 +102,7 @@ while True:
                 songs_dict = results['tracks'] 
                 song_items = songs_dict['items'] 
                 song = song_items[0]['external_urls']['spotify'] 
-                spotify.add_to_queue(song, spotify_device_id)
+                spotify.add_to_queue(song, spotify.spotify_device_id)
                 print(f"Adding request {request}")
                 requests_buffer.append(request)
 

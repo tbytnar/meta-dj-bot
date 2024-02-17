@@ -1,0 +1,4 @@
+Add
+: Persistent logging
+: Capture area setting
+: Spotify token expiring
