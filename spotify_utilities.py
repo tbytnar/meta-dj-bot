@@ -18,6 +18,7 @@ class SpotifyManager:
     redirect_uri = str
     auth_manager = object
     spotify_connection = object
+    spotify_device_id = str
 
     def __init__(self):
         with open("dj_config.json", "r") as config_file:
@@ -27,6 +28,7 @@ class SpotifyManager:
             self.client_secret = spotify_config.get("client_secret")
             self.redirect_uri = spotify_config.get("redirect_uri")
             self.auth_manager,self.spotify_connection = Create_Spotify(self.client_id, self.client_secret, self.redirect_uri)
+            self.spotify_device_id = self.GetAndSetSpotifyDevice()
             
     def Refresh_Spotify(self, authManager, spotify):
         token_info = authManager.cache_handler.get_cached_token()
@@ -34,22 +36,21 @@ class SpotifyManager:
             authManager, spotify = Create_Spotify(self.client_id, self.client_secret, self.redirect_uri)
         return authManager, spotify
 
+    def GetAndSetSpotifyDevice(self):
+        user = self.spotify_connection.current_user() 
+        devices = json.loads(json.dumps(self.spotify_connection.devices()))
+        devices_json = devices.get("devices", None)
+        if len(devices_json) > 1:
+            print(f"Hello {user['display_name']}!  Your Spotify Devices:")
+            for n in range(0,len(devices_json)):
+                device_name = devices_json[n].get("name", None)
+                device_type = devices_json[n].get("type", None)
+                print(f"{n+1} = {device_name} - {device_type}")
 
-def GetAndSetSpotifyDevice(spotify_object):
-    user = spotify_object.current_user() 
-    devices = json.loads(json.dumps(spotify_object.devices()))
-    devices_json = devices.get("devices", None)
-    if len(devices_json) > 1:
-        print(f"Hello {user['display_name']}!  Your Spotify Devices:")
-        for n in range(0,len(devices_json)):
-            device_name = devices_json[n].get("name", None)
-            device_type = devices_json[n].get("type", None)
-            print(f"{n+1} = {device_name} - {device_type}")
+            device_choice = int(input("Enter which device you want to send tracks to:")) - 1
+            device_id = devices_json[device_choice]
+        else:
+            print(f"Only one of your recently active devices was found.  Using it.  Info: {devices_json[0]['name']} ")
+            device_id = devices_json[0]['id']
 
-        device_choice = int(input("Enter which device you want to send tracks to:")) - 1
-        device_id = devices_json[device_choice]
-    else:
-        print(f"Only one of your recently active devices was found.  Using it.  Info: {devices_json[0]['name']} ")
-        device_id = devices_json[0]['id']
-
-    return device_id
+        return device_id
