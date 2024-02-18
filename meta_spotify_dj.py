@@ -90,18 +90,21 @@ dx_camera = dxcam.create(output_color="GRAY")
 
 requests_buffer = []
 spotify_manager = spotify.SpotifyManager()
-1
+
 running = True
 while running:
     print("1 - Set Spotify Device")
-    print("2 - Run DJ Bot")
-    print("3 - Exit")
+    print("2 - Set Capture Region")
+    print("3 - Run DJ Bot")
+    print("4 - Exit")
     menu_choice = input("What do you want to do?")
     
     if menu_choice == "1":
         print("Welcome to the spotify device section!")
         spotify_manager.GetAndSetSpotifyDevice()
     if menu_choice == "2":
+        pass
+    if menu_choice == "3":
         print("The DJ Bot is running.  Press Control-C to exit from here.")
         while running:
             spotify_manager.auth_manager, spotify_manager.spotify_connection = spotify_manager.Refresh_Spotify(spotify_manager.auth_manager, spotify_manager.spotify_connection)
@@ -128,5 +131,5 @@ while running:
             else:
                 time.sleep(5)
                 print("Waiting for screen to change...")
-    if menu_choice == "3":
+    if menu_choice == "4":
         running = False
