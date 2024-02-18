@@ -48,7 +48,7 @@ class SpotifyManager:
                 print(f"{n+1} = {device_name} - {device_type}")
 
             device_choice = int(input("Enter which device you want to send tracks to:")) - 1
-            device_id = devices_json[device_choice]
+            device_id = devices_json[device_choice]['id']
         else:
             print(f"Only one of your recently active devices was found.  Using it.  Info: {devices_json[0]['name']} ")
             device_id = devices_json[0]['id']
