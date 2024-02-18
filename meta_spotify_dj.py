@@ -34,21 +34,34 @@ def CaptureScreen(camera):
     return img
 
 def DetectChatWindows(img):
-    ret,thresh = cv2.threshold(img,50,255,0)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # grayscale
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
+    # threshold
+    ret,thresh = cv2.threshold(gray,65,255,0)
+    
+    # Fill rectangular contours
+    cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    for c in cnts:
+        cv2.drawContours(thresh, [c], -1, (255,255,255), -1)
+
+    # Morph open
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9,9))
+    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=4)
+
+    # Draw rectangles, the 'area_treshold' value was determined empirically
+    cnts = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    area_min = 6000
+    area_max = 25000
     chats = []
-    for cnt in contours:
-        x1,y1 = cnt[0][0]
-        approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
+    for c in cnts:
+        epsilon = 0.05*cv2.arcLength(c,True)
+        approx = cv2.approxPolyDP(c,epsilon,True)
         if len(approx) == 4:
-            x, y, w, h = cv2.boundingRect(cnt)
-            ratio = float(w)/h
-            if ratio != 1:
-                if w > 10:
-                    cv2.putText(img, 'Rectangle', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                    img = cv2.drawContours(img, [cnt], -1, (0,255,0), 3)
-                    chats.append(cv2.boundingRect(cnt))
+            if cv2.contourArea(c) > area_min and cv2.contourArea(c) < area_max:
+                chats.append(cv2.boundingRect(c))
     return chats
 
 
@@ -86,7 +99,7 @@ def DetectDJRequests(img, chats):
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # DxCamera Variables
-dx_camera = dxcam.create(output_color="GRAY")
+dx_camera = dxcam.create()
 
 requests_buffer = []
 spotify_manager = spotify.SpotifyManager()
@@ -112,7 +125,8 @@ while running:
                 for request in current_requests:
                     buffer_search = next((x for x in requests_buffer if x.requestor == request.requestor and x.track == request.track), None)
                     if buffer_search is None:
-                        logging.warning(f"{request.requestor} requested: {request.track}")
+                        logging.info(f"{request.requestor} requested: {request.track}")
+                        print(f"{request.requestor} requested: {request.track}")
                         results = spotify_manager.spotify_connection.search(request.track, 1, 0, "track") 
                         songs_dict = results['tracks'] 
                         song_items = songs_dict['items'] 
