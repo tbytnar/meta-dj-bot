@@ -1,11 +1,13 @@
 import dxcam
 import pytesseract
 import cv2 
-import json
+import sys
 import time
 import spotify_utilities as spotify
 import logging
 from datetime import datetime
+from region_picker import RegionPicker
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 logging.basicConfig(filename="meta_spotify_dj.log", encoding="utf-8", level=logging.DEBUG)
 logging.info(f"\n\nMeta Spotify DJ Began Running @ {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
@@ -22,11 +24,9 @@ class Request:
         return f"Request Object: Requestor = {self.requestor}, Track = {self.track}"
     
 
-def CaptureScreen(camera):
+def CaptureScreen(camera, region):
     # img = np.array(Image.open("HW_DJ_Request_Test.png"))
-    left, top = (1920 - 640) // 2, (1080 - 640) // 2
-    right, bottom = left + 640, top + 640
-    region = (left, top, right, bottom)
+
     img = camera.grab(region=region)
     # cv2.imshow("Shapes", img)
     # time.sleep(1)
@@ -91,6 +91,10 @@ dx_camera = dxcam.create(output_color="GRAY")
 requests_buffer = []
 spotify_manager = spotify.SpotifyManager()
 
+left, top = (1920 - 640) // 2, (1080 - 640) // 2
+right, bottom = left + 640, top + 640
+capture_region = (left, top, right, bottom)
+
 running = True
 while running:
     print("1 - Set Spotify Device")
@@ -98,17 +102,21 @@ while running:
     print("3 - Run DJ Bot")
     print("4 - Exit")
     menu_choice = input("What do you want to do?")
-    
     if menu_choice == "1":
         print("Welcome to the spotify device section!")
         spotify_manager.GetAndSetSpotifyDevice()
     if menu_choice == "2":
-        pass
+        app = QtWidgets.QApplication(sys.argv)
+        window = RegionPicker()
+        window.show()
+        capture_region = window.coords
+        app.aboutToQuit.connect(app.deleteLater)
+        app.exec_()
     if menu_choice == "3":
         print("The DJ Bot is running.  Press Control-C to exit from here.")
         while running:
             spotify_manager.auth_manager, spotify_manager.spotify_connection = spotify_manager.Refresh_Spotify(spotify_manager.auth_manager, spotify_manager.spotify_connection)
-            screen_image = CaptureScreen(dx_camera)
+            screen_image = CaptureScreen(dx_camera, capture_region)
             if screen_image is not None:
                 current_chats = DetectChatWindows(screen_image)
                 current_requests = DetectDJRequests(screen_image, current_chats)
@@ -122,7 +130,6 @@ while running:
                         song = song_items[0]['external_urls']['spotify'] 
                         spotify_manager.spotify_connection.add_to_queue(song, spotify_manager.spotify_device_id)
                         requests_buffer.append(request)
-
                 for request in requests_buffer:
                     current_search = next((x for x in current_requests if x.requestor == request.requestor and x.track == request.track), None)
                     if current_search is None: 
