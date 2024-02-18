@@ -90,7 +90,7 @@ dx_camera = dxcam.create(output_color="GRAY")
 
 requests_buffer = []
 spotify_manager = spotify.SpotifyManager()
-1
+
 running = True
 while running:
     print("1 - Set Spotify Device")
